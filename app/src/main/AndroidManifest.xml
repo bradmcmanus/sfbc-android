@@ -19,7 +19,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="@string/google_maps_key"/>
+            android:value="AIzaSyD_gkvpWAw5EGu5JxT7VuIvuFr8h4y1LT4"/>
 
         <activity
             android:name="org.sfbike.MainActivity"
