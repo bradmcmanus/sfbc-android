@@ -25,13 +25,7 @@ android {
     }
     signingConfigs {
         debug {
-            storeFile file("/Users/brad/.android/debug.keystore")
-        }
-        release {
-            storeFile file(Util.getPropertyWithDefault(project, "RELEASE_STORE_FILE", "."))
-            storePassword Util.getPropertyWithDefault(project, "RELEASE_STORE_PASSWORD", "")
-            keyAlias Util.getPropertyWithDefault(project, "RELEASE_KEY_ALIAS", "")
-            keyPassword Util.getPropertyWithDefault(project, "RELEASE_KEY_PASSWORD", "")
+            storeFile file("debug.keystore")
         }
     }
     sourceSets {
@@ -43,21 +37,15 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
 
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib:${kotlin_version}"
     compile 'com.android.support:appcompat-v7:24.1.1'
-    compile 'com.google.android.gms:play-services:9.4.0'
-}
 
-public class Util {
-    static def isDefined(s) {
-        return s != null && !s.isEmpty() && s != "null"
-    }
+    def gpsVersion = '9.4.0'
+    compile "com.google.android.gms:play-services-location:${gpsVersion}"
+    compile "com.google.android.gms:play-services-maps:${gpsVersion}"
 
-    static def getPropertyWithDefault(Project project, String key, String thedefault) {
-        if (project.hasProperty(key)) {
-            return project.getProperty(key).toString()
-        }
+    compile 'com.google.maps.android:android-maps-utils:0.4'
 
-        return thedefault
-    }
+    compile 'com.google.code.gson:gson:2.6.2'
+    compile 'com.github.salomonbrys.kotson:kotson:2.3.0'
 }
