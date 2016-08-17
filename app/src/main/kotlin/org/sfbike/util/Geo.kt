@@ -1,4 +1,4 @@
-package org.sfbike
+package org.sfbike.util
 
 import org.json.JSONException
 import org.json.JSONObject
