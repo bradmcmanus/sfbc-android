@@ -1,33 +1,33 @@
 package org.sfbike.util
 
+import com.google.android.gms.maps.model.LatLng
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
-import java.util.*
 
 object Geo {
 
     private val PI = 3.14159265
     private val TWO_PI = 2 * PI
 
-    fun coordinateIsInsidePolygon(latitude: Double, longitude: Double, lat_array: ArrayList<Double>, long_array: ArrayList<Double>): Boolean {
+    fun coordinateIsInsidePolygon(latitude: Double, longitude: Double, points: MutableList<LatLng>): Boolean {
         var i: Int
         var angle = 0.0
         var pointOneLat: Double
         var pointOneLng: Double
         var pointTwoLat: Double
         var pointTwoLng: Double
-        val n = lat_array.size
+        val n = points.size
 
         i = 0
         while (i < n) {
-            pointOneLat = lat_array.get(i) - latitude
-            pointOneLng = long_array.get(i) - longitude
-            pointTwoLat = lat_array.get((i + 1) % n) - latitude
-            pointTwoLng = long_array.get((i + 1) % n) - longitude // You should have paid more attention in high school geometry.
+            pointOneLat = points[i].latitude - latitude
+            pointOneLng = points[i].longitude - longitude
+            pointTwoLat = points[(i + 1) % n].latitude - latitude
+            pointTwoLng = points[(i + 1) % n].longitude - longitude // You should have paid more attention in high school geometry.
             angle += Angle2D(pointOneLat, pointOneLng, pointTwoLat, pointTwoLng)
             i++
         }
@@ -92,7 +92,8 @@ object Geo {
             reader.close()
         }
         // Converts the result string into a JSONObject
-        return JSONObject(result.toString())
+        val string = result.toString()
+        return JSONObject(string)
     }
 
 }
