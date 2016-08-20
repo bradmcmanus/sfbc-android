@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
 import android.os.Handler
+import android.os.PersistableBundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.FragmentActivity
 import android.support.v4.content.ContextCompat
@@ -18,7 +19,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.LocationSource
-import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
@@ -27,6 +28,7 @@ import com.google.maps.android.geojson.GeoJsonFeature
 import com.google.maps.android.geojson.GeoJsonLayer
 import com.google.maps.android.geojson.GeoJsonMultiPolygon
 import com.google.maps.android.geojson.GeoJsonParser
+import org.json.JSONObject
 import org.sfbike.data.SfpdStation
 import org.sfbike.util.GooglePlayUtil
 import java.io.BufferedReader
@@ -37,16 +39,13 @@ class MainActivity : FragmentActivity() {
     //region Members
 
     companion object {
-        private val bearing = LatLng(37.777998, -122.409411)
         private val DEFAULT_ZOOM = 13.88.toFloat()
     }
 
     private val handler = Handler()
-    lateinit private var map: GoogleMap
 
-    lateinit private var stations: MutableList<SfpdStation>
-    lateinit private var sfpdFeatureParser: GeoJsonParser
-
+    lateinit var mapView: MapView
+    private var map: GoogleMap? = null
 
     //endregion
 
@@ -54,23 +53,27 @@ class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_maps)
 
-        val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
-        mapFragment.getMapAsync { googleMap ->
+        setContentView(R.layout.activity_maps)
+        mapView = findViewById(R.id.map_view) as MapView
+        mapView.onCreate(savedInstanceState)
+
+        //val options = GoogleMapOptions().zOrderOnTop(true)
+        //mapView = MapView(this, options)
+        //setContentView(mapView)
+
+        mapView.getMapAsync { googleMap ->
             map = googleMap
+            googleMap.setOnMapClickListener { loc -> showStationInfo(loc) }
+
             configureMap()
 
-            loadSfpdStationInfo()
-            loadSfpdShapes()
+            //displaySfpdShapes()
+
+            if (location != null) onLocation(location!!)
         }
 
-        handler.postDelayed({ map.setLocationSource(locationSource) }, 10000)
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        configureMap()
+        handler.postDelayed({ map?.setLocationSource(locationSource) }, 10000)
     }
 
     override fun onStart() {
@@ -79,9 +82,39 @@ class MainActivity : FragmentActivity() {
         locationClient.connect()
     }
 
+    override fun onResume() {
+        super.onResume()
+        mapView.onResume()
+    }
+
+    override fun onPause() {
+        mapView.onPause()
+        super.onPause()
+    }
+
     override fun onStop() {
         locationClient.disconnect()
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        mapView.onDestroy()
+        super.onDestroy()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
+        super.onSaveInstanceState(outState, outPersistentState)
+        mapView.onSaveInstanceState(outState)
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        mapView.onLowMemory()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        configureMap()
     }
 
     //endregion
@@ -97,11 +130,11 @@ class MainActivity : FragmentActivity() {
 
     private fun configureMap() {
         if (locationGranted) {
-            map.mapType = GoogleMap.MAP_TYPE_NORMAL
-            map.isMyLocationEnabled = true
-            map.uiSettings?.isCompassEnabled = true
-            map.uiSettings?.isMyLocationButtonEnabled = true
-            map.clear()
+            map?.mapType = GoogleMap.MAP_TYPE_NORMAL
+            map?.isMyLocationEnabled = true
+            map?.uiSettings?.isCompassEnabled = true
+            map?.uiSettings?.isMyLocationButtonEnabled = true
+            map?.clear()
         } else {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 371)
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), 371)
@@ -110,11 +143,11 @@ class MainActivity : FragmentActivity() {
 
     private fun zoom(latLng: LatLng, addMarker: Boolean = false, zoom: Float = DEFAULT_ZOOM) {
         if (addMarker) {
-            map.clear()
-            map.addMarker(MarkerOptions().position(latLng))
+            map?.clear()
+            map?.addMarker(MarkerOptions().position(latLng))
         }
 
-        map.animateCamera(CameraUpdateFactory.newCameraPosition(
+        map?.animateCamera(CameraUpdateFactory.newCameraPosition(
                 CameraPosition.Builder()
                         .target(latLng)
                         .zoom(zoom)
@@ -135,7 +168,7 @@ class MainActivity : FragmentActivity() {
 
     private fun stationToast(feature: GeoJsonFeature) {
         val id = feature.getProperty("objectid").toInt()
-        val station = stations.first { it.id == id }
+        val station = sfpdStations.first { it.id == id }
         Toast.makeText(this@MainActivity, "${station.name}", Toast.LENGTH_LONG).show()
     }
 
@@ -143,26 +176,29 @@ class MainActivity : FragmentActivity() {
 
     //region JSON / GeoJSON parsing
 
-    private fun loadSfpdShapes() {
-        // Load features to find point inside a (multi)-polygon
+    val sfpdShapeJson: JSONObject by lazy {
         val stream = resources.openRawResource(R.raw.sfpd_shapes)
-        val json = GeoJsonLayer.createJsonFileObject(stream)
-        sfpdFeatureParser = GeoJsonParser(json)
+        GeoJsonLayer.createJsonFileObject(stream)
+    }
 
+    val sfpdStations: MutableList<SfpdStation> by lazy {
+        val gson = Gson()
+        val raw = resources.openRawResource(R.raw.sfpd_stations)
+        val reader = BufferedReader(InputStreamReader(raw))
+        gson.fromJson<List<SfpdStation>>(reader).toMutableList()
+    }
+
+    val sfpdFeatureParser: GeoJsonParser by lazy {
+        GeoJsonParser(sfpdShapeJson)
+    }
+
+    private fun displaySfpdShapes() {
         // Add SFPD district shapes to the map
-        val sfpdLayer = GeoJsonLayer(map, json)
+        val sfpdLayer = GeoJsonLayer(map, sfpdShapeJson)
         sfpdLayer.addLayerToMap()
 
         // Feature click listener
         sfpdLayer.setOnFeatureClickListener { feature ->  if (feature != null) { stationToast(feature) } }
-    }
-
-    private fun loadSfpdStationInfo() {
-        val gson = Gson()
-        val raw = resources.openRawResource(R.raw.sfpd_stations)
-        val reader = BufferedReader(InputStreamReader(raw))
-        stations = gson.fromJson<List<SfpdStation>>(reader).toMutableList()
-        for (station in stations) { log("${station.id} + ${station.email}") }
     }
 
     //endregion
