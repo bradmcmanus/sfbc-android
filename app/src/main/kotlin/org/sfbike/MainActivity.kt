@@ -1,10 +1,14 @@
 package org.sfbike
 
+import android.Manifest
 import android.content.DialogInterface
+import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
 import android.os.Handler
+import android.support.v4.app.ActivityCompat
 import android.support.v4.app.FragmentActivity
+import android.support.v4.content.ContextCompat
 import android.view.KeyEvent
 import android.widget.Toast
 import com.github.salomonbrys.kotson.fromJson
@@ -24,7 +28,6 @@ import com.google.maps.android.geojson.GeoJsonLayer
 import com.google.maps.android.geojson.GeoJsonMultiPolygon
 import com.google.maps.android.geojson.GeoJsonParser
 import org.sfbike.data.SfpdStation
-import org.sfbike.util.Geo
 import org.sfbike.util.GooglePlayUtil
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -38,8 +41,8 @@ class MainActivity : FragmentActivity() {
         private val DEFAULT_ZOOM = 13.88.toFloat()
     }
 
-    private val mHandler = Handler()
-    private var map: GoogleMap? = null
+    private val handler = Handler()
+    lateinit private var map: GoogleMap
 
     lateinit private var stations: MutableList<SfpdStation>
     lateinit private var sfpdFeatureParser: GeoJsonParser
@@ -56,14 +59,18 @@ class MainActivity : FragmentActivity() {
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync { googleMap ->
             map = googleMap
-            zoom(bearing, addMarker = true, zoom = DEFAULT_ZOOM)
+            configureMap()
 
             loadSfpdStationInfo()
             loadSfpdShapes()
-            showStationInfo(bearing)
         }
 
-        mHandler.postDelayed({ if (map != null) { map!!.setLocationSource(locationSource) } }, 10000)
+        handler.postDelayed({ map.setLocationSource(locationSource) }, 10000)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        configureMap()
     }
 
     override fun onStart() {
@@ -81,13 +88,33 @@ class MainActivity : FragmentActivity() {
 
     //region Helpers
 
-    private fun zoom(latLng: LatLng, addMarker: Boolean, zoom: Float) {
+    val locationGranted: Boolean
+        get() = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                        PackageManager.PERMISSION_GRANTED
+
+
+    private fun configureMap() {
+        if (locationGranted) {
+            map.mapType = GoogleMap.MAP_TYPE_NORMAL
+            map.isMyLocationEnabled = true
+            map.uiSettings?.isCompassEnabled = true
+            map.uiSettings?.isMyLocationButtonEnabled = true
+            map.clear()
+        } else {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 371)
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), 371)
+        }
+    }
+
+    private fun zoom(latLng: LatLng, addMarker: Boolean = false, zoom: Float = DEFAULT_ZOOM) {
         if (addMarker) {
-            map?.clear()
-            map?.addMarker(MarkerOptions().position(latLng))
+            map.clear()
+            map.addMarker(MarkerOptions().position(latLng))
         }
 
-        map?.animateCamera(CameraUpdateFactory.newCameraPosition(
+        map.animateCamera(CameraUpdateFactory.newCameraPosition(
                 CameraPosition.Builder()
                         .target(latLng)
                         .zoom(zoom)
@@ -117,8 +144,6 @@ class MainActivity : FragmentActivity() {
     //region JSON / GeoJSON parsing
 
     private fun loadSfpdShapes() {
-        if (map == null) { return }
-
         // Load features to find point inside a (multi)-polygon
         val stream = resources.openRawResource(R.raw.sfpd_shapes)
         val json = GeoJsonLayer.createJsonFileObject(stream)
@@ -144,7 +169,16 @@ class MainActivity : FragmentActivity() {
 
     //region Current Location
 
-    private var mLocation: Location? = null
+    private fun onLocation(location: Location) {
+        this@MainActivity.location = location
+        locationListener?.onLocationChanged(location)
+
+        val latlng = LatLng(location.latitude, location.longitude)
+        zoom(latlng)
+        showStationInfo(latlng)
+    }
+
+    private var location: Location? = null
     var locationListener: LocationSource.OnLocationChangedListener? = null
     val locationSource = object : LocationSource {
         override fun activate(listener: LocationSource.OnLocationChangedListener?) {
@@ -156,8 +190,7 @@ class MainActivity : FragmentActivity() {
         }
     }
     val locationClient: GoogleApiClient by lazy {
-        GoogleApiClient.Builder(this,
-                object : GoogleApiClient.ConnectionCallbacks {
+        GoogleApiClient.Builder(this, object : GoogleApiClient.ConnectionCallbacks {
                     override fun onConnected(p0: Bundle?) {
                         if (!locationClient.isConnected) {
                             return
@@ -168,26 +201,15 @@ class MainActivity : FragmentActivity() {
                             return
                         }
 
-                        mLocation = location
-                        if (locationListener != null) {
-                            locationListener!!.onLocationChanged(mLocation!!)
-                        }
-//                        if (mState != State.TRIP_DETAILS) {
-//                            centerMapOnMyLocation()
-//                        }
-//                        mSearchView.setLocation(mLocation!!)
+                        onLocation(location)
+
                         log("LocationClient - delivered loc=" + location.latitude + ", " + location.longitude)
                         locationClient.disconnect()
                     }
 
-                    override fun onConnectionSuspended(p0: Int) {
-                        log.w("LocationClient - onConnectionSuspended code=${p0}")
-                    }
-                },
-                object : GoogleApiClient.OnConnectionFailedListener {
-                    override fun onConnectionFailed(result: ConnectionResult) {
-                        log.w("LocationClient - onConnectionFailed($result)")
-                    }
+                    override fun onConnectionSuspended(p0: Int) = log.w("LocationClient - onConnectionSuspended code=${p0}")
+                }, object : GoogleApiClient.OnConnectionFailedListener {
+                    override fun onConnectionFailed(result: ConnectionResult) = log.w("LocationClient - onConnectionFailed($result)")
                 })
                 .addApi(LocationServices.API)
                 .build()
@@ -199,9 +221,7 @@ class MainActivity : FragmentActivity() {
 
     private fun checkGooglePlayServicesAvailability() {
         GooglePlayUtil.checkGooglePlayServicesAvailability(this, object : DialogInterface.OnCancelListener {
-            override fun onCancel(dialog: DialogInterface) {
-                finish()
-            }
+            override fun onCancel(dialog: DialogInterface) = finish()
         }, object : DialogInterface.OnKeyListener {
             override fun onKey(dialog: DialogInterface, keyCode: Int, event: KeyEvent): Boolean {
                 if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
