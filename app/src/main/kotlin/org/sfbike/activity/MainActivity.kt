@@ -2,8 +2,10 @@ package org.sfbike.activity
 
 import android.Manifest
 import android.content.DialogInterface
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.PersistableBundle
@@ -32,7 +34,7 @@ import org.json.JSONObject
 import org.sfbike.R
 import org.sfbike.data.District
 import org.sfbike.data.Station
-import org.sfbike.util.Geo
+import org.sfbike.util.GeoUtil
 import org.sfbike.util.GooglePlayUtil
 import org.sfbike.util.bindView
 import org.sfbike.util.log
@@ -80,6 +82,31 @@ class MainActivity : FragmentActivity() {
         }
 
         handler.postDelayed({ map?.setLocationSource(locationSource) }, 10000)
+
+
+        loadIntentImageExtra()
+    }
+
+    var imageUri: Uri? = null
+
+    private fun loadIntentImageExtra() {
+        fun handleSendImage(intent: Intent) {
+            try {
+                imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM)
+            } catch (e: Exception) {
+                log("unable to load image")
+            }
+        }
+
+        val intent = intent
+        val action = intent.action
+        val type = intent.type
+
+        if (Intent.ACTION_SEND.equals(action) && type != null) {
+            if (type.startsWith("image/")) {
+                handleSendImage(intent)
+            }
+        }
     }
 
     override fun onStart() {
@@ -167,13 +194,14 @@ class MainActivity : FragmentActivity() {
         dashboardView.visibility = View.VISIBLE
         dashboardView.bindStation(station.first)
         dashboardView.bindDistrict(district.first)
+        dashboardView.imageUri = imageUri
     }
 
     private fun getStation(location: LatLng): Pair<Station?, GeoJsonFeature?> {
         for (feature in sfpdFeatureParser.features) {
             if (feature.geometry is GeoJsonMultiPolygon) {
                 for (poly in (feature.geometry as GeoJsonMultiPolygon).polygons) {
-                    if (Geo.coordinateIsInsidePolygon(location.latitude, location.longitude, poly.coordinates[0])) {
+                    if (GeoUtil.coordinateIsInsidePolygon(location.latitude, location.longitude, poly.coordinates[0])) {
                         return Pair(stationForFeature(feature), feature)
                     }
                 }
@@ -191,7 +219,7 @@ class MainActivity : FragmentActivity() {
         for (feature in supeParser.features) {
             if (feature.geometry is GeoJsonMultiPolygon) {
                 for (poly in (feature.geometry as GeoJsonMultiPolygon).polygons) {
-                    if (Geo.coordinateIsInsidePolygon(location.latitude, location.longitude, poly.coordinates[0])) {
+                    if (GeoUtil.coordinateIsInsidePolygon(location.latitude, location.longitude, poly.coordinates[0])) {
                         return Pair(districtForFeature(feature), feature)
                     }
                 }

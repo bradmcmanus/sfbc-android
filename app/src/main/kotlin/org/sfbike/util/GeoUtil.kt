@@ -8,7 +8,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
 
-object Geo {
+object GeoUtil {
 
     private val PI = 3.14159265
     private val TWO_PI = 2 * PI

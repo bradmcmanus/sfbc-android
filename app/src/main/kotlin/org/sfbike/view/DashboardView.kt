@@ -30,6 +30,7 @@ class DashboardView(context: Context, attrs: AttributeSet) : LinearLayout(contex
 
     var district: District? = null
     var station: Station? = null
+    var imageUri: Uri? = null
 
     init {
         View.inflate(context, R.layout.view_dashboard, this)
@@ -92,23 +93,24 @@ class DashboardView(context: Context, attrs: AttributeSet) : LinearLayout(contex
     }
 
     private fun tweetAt(handle: String) {
-        val tweetIntent = Intent(Intent.ACTION_SEND)
-        tweetIntent.putExtra(Intent.EXTRA_TEXT, "Hey @$handle ")
-        tweetIntent.type = "text/plain"
+        val intent = Intent(Intent.ACTION_SEND)
+        intent.type = "image/*"
+        intent.putExtra(Intent.EXTRA_TEXT, "Hey @$handle ")
+        if (imageUri is Uri) intent.putExtra(Intent.EXTRA_STREAM, imageUri!!)
 
         val packManager = context.packageManager
-        val resolvedInfoList = packManager.queryIntentActivities(tweetIntent, PackageManager.MATCH_DEFAULT_ONLY)
+        val resolvedInfoList = packManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
 
         var resolved = false
         for (resolveInfo in resolvedInfoList) {
             if (resolveInfo.activityInfo.packageName.startsWith("com.twitter.android")) {
-                tweetIntent.setClassName(resolveInfo.activityInfo.packageName, resolveInfo.activityInfo.name)
+                intent.setClassName(resolveInfo.activityInfo.packageName, "com.twitter.android.composer.ComposerActivity")
                 resolved = true
                 break
             }
         }
         if (resolved) {
-            context.startActivity(tweetIntent)
+            context.startActivity(intent)
         } else {
             Toast.makeText(this.context, "Twitter app isn't found", Toast.LENGTH_LONG).show()
         }

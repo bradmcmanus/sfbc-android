@@ -1,4 +1,4 @@
-package org.sfbike
+package org.sfbike.activity
 
 import android.support.multidex.MultiDexApplication
 
