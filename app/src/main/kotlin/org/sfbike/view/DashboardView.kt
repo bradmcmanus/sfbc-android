@@ -118,12 +118,12 @@ class DashboardView(context: Context, attrs: AttributeSet) : LinearLayout(contex
 
     fun bindDistrict(district: District?) {
         this.district = district
-        districtTv.text = "District ${district?.id}, ${district?.name}"
+        districtTv.text = "District ${district?.id}\n${district?.name}"
     }
 
     fun bindStation(station: Station?) {
         this.station = station
-        stationTv.text = "SFPD ${station?.name} Station"
+        stationTv.text = "${station?.name} Station"
     }
 
 }

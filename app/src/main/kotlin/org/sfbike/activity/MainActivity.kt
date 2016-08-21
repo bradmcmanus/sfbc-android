@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.location.Location
 import android.net.Uri
 import android.os.Bundle
@@ -26,10 +27,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.gson.Gson
-import com.google.maps.android.geojson.GeoJsonFeature
-import com.google.maps.android.geojson.GeoJsonLayer
-import com.google.maps.android.geojson.GeoJsonMultiPolygon
-import com.google.maps.android.geojson.GeoJsonParser
+import com.google.maps.android.geojson.*
 import org.json.JSONObject
 import org.sfbike.R
 import org.sfbike.data.District
@@ -72,7 +70,11 @@ class MainActivity : FragmentActivity() {
 
         mapView.getMapAsync { googleMap ->
             map = googleMap
-            googleMap.setOnMapClickListener { loc -> bindLocation(loc) }
+            googleMap.setOnMapClickListener { loc ->
+                map?.clear()
+                map?.addMarker(MarkerOptions().position(loc))
+                bindLocation(loc)
+            }
 
             configureMap()
 
@@ -195,6 +197,12 @@ class MainActivity : FragmentActivity() {
         dashboardView.bindStation(station.first)
         dashboardView.bindDistrict(district.first)
         dashboardView.imageUri = imageUri
+
+        val stationLayer = GeoJsonLayer(map, station.second)
+        stationLayer.addLayerToMap()
+
+        val districtLayer = GeoJsonLayer(map, district.second)
+        districtLayer.addLayerToMap()
     }
 
     private fun getStation(location: LatLng): Pair<Station?, GeoJsonFeature?> {

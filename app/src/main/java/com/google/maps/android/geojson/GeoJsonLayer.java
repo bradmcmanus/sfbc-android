@@ -20,14 +20,14 @@ import java.util.HashMap;
 /**
  * A class that allows the developer to import GeoJSON data, style it and interact with the
  * imported data.
- *
+ * <p/>
  * To create a new GeoJsonLayer from a resource stored locally
  * {@code GeoJsonLayer layer = new GeoJsonLayer(getMap(), R.raw.resource,
  * getApplicationContext());}
- *
+ * <p/>
  * To render the imported GeoJSON data onto the layer
  * {@code layer.addLayerToMap();}
- *
+ * <p/>
  * To remove the rendered data from the layer
  * {@code layer.removeLayerFromMap();}
  */
@@ -36,6 +36,12 @@ public class GeoJsonLayer {
     private final GeoJsonRenderer mRenderer;
 
     private LatLngBounds mBoundingBox;
+
+    public GeoJsonLayer(GoogleMap map, GeoJsonFeature feature) {
+        HashMap<GeoJsonFeature, Object> geoJsonFeatures = new HashMap<GeoJsonFeature, Object>();
+        geoJsonFeatures.put(feature, null);
+        mRenderer = new GeoJsonRenderer(map, geoJsonFeatures);
+    }
 
     /**
      * Creates a new GeoJsonLayer object. Default styles are applied to the GeoJsonFeature objects.
@@ -65,11 +71,11 @@ public class GeoJsonLayer {
      * @param map        map where the layer is to be rendered
      * @param resourceId GeoJSON file to add to the layer
      * @param context    context of the application, required to open the GeoJSON file
+     *
      * @throws IOException   if the file cannot be open for read
      * @throws JSONException if the JSON file has invalid syntax and cannot be parsed successfully
      */
-    public GeoJsonLayer(GoogleMap map, int resourceId, Context context)
-            throws IOException, JSONException {
+    public GeoJsonLayer(GoogleMap map, int resourceId, Context context) throws IOException, JSONException {
         this(map, createJsonFileObject(context.getResources().openRawResource(resourceId)));
     }
 
@@ -77,7 +83,7 @@ public class GeoJsonLayer {
      * Sets a single click listener for the entire GoogleMap object, that will be called
      * with the corresponding GeoJsonFeature object when an object on the map (Polygon,
      * Marker, Polyline) is clicked.
-     *
+     * <p/>
      * Note that if multiple GeoJsonLayer objects are bound to a GoogleMap object, calling
      * setOnFeatureClickListener on one will override the listener defined on the other. In
      * that case, you must define each of the GoogleMap click listeners manually
@@ -119,6 +125,7 @@ public class GeoJsonLayer {
      * Callback interface for when a GeoJsonLayer's map object is clicked.
      */
     public interface GeoJsonOnFeatureClickListener {
+
         public void onFeatureClick(GeoJsonFeature feature);
     }
 
@@ -128,6 +135,7 @@ public class GeoJsonLayer {
      * belongs to.
      *
      * @param polygon Polygon
+     *
      * @return GeoJsonFeature for the given polygon
      */
     public GeoJsonFeature getFeature(Polygon polygon) {
@@ -140,6 +148,7 @@ public class GeoJsonLayer {
      * belongs to.
      *
      * @param polyline Polyline
+     *
      * @return GeoJsonFeature for the given polyline
      */
     public GeoJsonFeature getFeature(Polyline polyline) {
@@ -152,6 +161,7 @@ public class GeoJsonLayer {
      * belongs to.
      *
      * @param marker Marker
+     *
      * @return GeoJsonFeature for the given marker
      */
     public GeoJsonFeature getFeature(Marker marker) {
@@ -162,12 +172,13 @@ public class GeoJsonLayer {
      * Takes a character input stream and converts it into a JSONObject
      *
      * @param stream character input stream representing the GeoJSON file
+     *
      * @return JSONObject with the GeoJSON data
+     *
      * @throws IOException   if the file cannot be opened for read
      * @throws JSONException if the JSON file has poor structure
      */
-    public static JSONObject createJsonFileObject(InputStream stream)
-            throws IOException, JSONException {
+    public static JSONObject createJsonFileObject(InputStream stream) throws IOException, JSONException {
         String line;
         StringBuilder result = new StringBuilder();
         // Reads from stream
