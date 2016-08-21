@@ -123,7 +123,7 @@ class DashboardView(context: Context, attrs: AttributeSet) : LinearLayout(contex
 
     fun bindStation(station: Station?) {
         this.station = station
-        stationTv.text = "${station?.name} Station"
+        stationTv.text = "${station?.name}\nStation"
     }
 
 }

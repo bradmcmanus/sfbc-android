@@ -342,7 +342,7 @@ import java.util.Set;
             polygonOptions.addHole(polygon.getCoordinates().get(i));
         }
         Polygon addedPolygon = mMap.addPolygon(polygonOptions);
-        addedPolygon.setClickable(true);
+        //addedPolygon.setClickable(true);
         return addedPolygon;
     }
 

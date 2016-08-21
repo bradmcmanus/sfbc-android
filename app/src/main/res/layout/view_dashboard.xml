@@ -19,11 +19,16 @@
             android:id="@+id/district_tv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
+            android:gravity="left|center_vertical"
             android:paddingLeft="4dp"
             android:paddingRight="4dp"
             android:textColor="@android:color/white"
-            android:textSize="16sp"/>
+            android:textSize="20sp"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"/>
 
         <Button
             android:id="@+id/tweet_supe_button"
@@ -37,7 +42,6 @@
             style="?android:attr/buttonBarButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:drawableLeft="@drawable/ic_email_white_24dp"
             android:text="@string/email"/>
 
         <Button
@@ -64,11 +68,16 @@
             android:id="@+id/station_tv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
+            android:gravity="left|center_vertical"
             android:paddingLeft="4dp"
             android:paddingRight="4dp"
             android:textColor="@android:color/white"
-            android:textSize="16sp"/>
+            android:textSize="20sp"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"/>
 
         <Button
             android:id="@+id/tweet_station_button"
@@ -89,7 +98,6 @@
             style="?android:attr/buttonBarButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:drawableLeft="@drawable/ic_phone_white_24dp"
             android:text="@string/call"/>
 
     </LinearLayout>

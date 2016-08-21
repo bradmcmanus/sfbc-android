@@ -46,6 +46,7 @@ class MainActivity : FragmentActivity() {
 
     companion object {
         private val DEFAULT_ZOOM = 13.88.toFloat()
+        private val TAP_ZOOM = 14.7.toFloat()
     }
 
     private val handler = Handler()
@@ -74,6 +75,7 @@ class MainActivity : FragmentActivity() {
                 map?.clear()
                 map?.addMarker(MarkerOptions().position(loc))
                 bindLocation(loc)
+                zoom(loc, false, TAP_ZOOM)
             }
 
             configureMap()
@@ -198,11 +200,28 @@ class MainActivity : FragmentActivity() {
         dashboardView.bindDistrict(district.first)
         dashboardView.imageUri = imageUri
 
+        val style = GeoJsonPolygonStyle()
+        style.fillColor = adjustAlpha(getColor(R.color.material_blue_grey_800), .7f)
+        station.second?.polygonStyle = style
+        val lineStyle = GeoJsonLineStringStyle()
+        lineStyle.color = getColor(android.R.color.white)
+        station.second?.lineStringStyle = lineStyle
         val stationLayer = GeoJsonLayer(map, station.second)
         stationLayer.addLayerToMap()
 
+        val supeStyle = GeoJsonPolygonStyle()
+        supeStyle.fillColor = adjustAlpha(getColor(R.color.material_deep_teal_500), .7f)
+        district.second?.polygonStyle = supeStyle
         val districtLayer = GeoJsonLayer(map, district.second)
         districtLayer.addLayerToMap()
+    }
+
+    fun adjustAlpha(color: Int, factor: Float): Int {
+        val alpha = Math.round(Color.alpha(color) * factor)
+        val red = Color.red(color)
+        val green = Color.green(color)
+        val blue = Color.blue(color)
+        return Color.argb(alpha, red, green, blue)
     }
 
     private fun getStation(location: LatLng): Pair<Station?, GeoJsonFeature?> {
