@@ -1,0 +1,79 @@
+[
+  {
+    "id": "11",
+    "name": "John Avalos",
+    "email": "John.Avalos@sfgov.org",
+    "phone": "415-554-6975",
+    "twitter": "AvalosSF"
+  },
+  {
+    "id": "5",
+    "name": "London Breed",
+    "email": "London.Breed@sfgov.org",
+    "phone": "415-554-7630",
+    "twitter": "LondonBreed"
+  },
+  {
+    "id": "7",
+    "name": "Norman Yee",
+    "email": "Norman.Yee@sfgov.org",
+    "phone": "415-554-6516",
+    "twitter": "NormanYeeSF"
+  },
+  {
+    "id": "8",
+    "name": "Scott Wiener",
+    "email": "Scott.Wiener@sfgov.org",
+    "phone": "415-554-6968",
+    "twitter": "Scott_Wiener"
+  },
+  {
+    "id": "4",
+    "name": "Katy Tang",
+    "email": "Katy.Tang @sfgov.org",
+    "phone": "415-554-7460",
+    "twitter": "SupervisorTang"
+  },
+  {
+    "id": "1",
+    "name": "Eric Mar",
+    "email": "Eric.L.Mar@sfgov.org",
+    "phone": "415-554-7410",
+    "twitter": "ericmar415"
+  },
+  {
+    "id": "6",
+    "name": "Jane Kim",
+    "email": "Jane.Kim@sfgov.org",
+    "phone": "415-554-7970",
+    "twitter": "JaneKim"
+  },
+  {
+    "id": "2",
+    "name": "Mark Farrell",
+    "email": "Mark.Farrell@sfgov.org",
+    "phone": "415-554-7752",
+    "twitter": "MarkFarrellSF"
+  },
+  {
+    "id": "10",
+    "name": "Malia Cohen",
+    "email": "Malia.Cohen@sfgov.org",
+    "phone": "415-554-",
+    "twitter": "Malia Cohen"
+  },
+  {
+    "id": "3",
+    "name": "Aaron Peskin",
+    "email": "Aaron.Peskin@sfgov.org",
+    "phone": "415-554-7450",
+    "twitter": "AaronPeskin"
+  },
+  {
+    "id": "9",
+    "name": "David Campos",
+    "email": "David.Campos@sfgov.org",
+    "phone": "415-554-5144",
+    "twitter": "DavidCamposSF"
+  }
+]

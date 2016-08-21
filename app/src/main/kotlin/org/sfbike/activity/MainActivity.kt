@@ -1,4 +1,4 @@
-package org.sfbike
+package org.sfbike.activity
 
 import android.Manifest
 import android.content.DialogInterface
@@ -11,7 +11,7 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.app.FragmentActivity
 import android.support.v4.content.ContextCompat
 import android.view.KeyEvent
-import android.widget.Toast
+import android.view.View
 import com.github.salomonbrys.kotson.fromJson
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
@@ -29,8 +29,14 @@ import com.google.maps.android.geojson.GeoJsonLayer
 import com.google.maps.android.geojson.GeoJsonMultiPolygon
 import com.google.maps.android.geojson.GeoJsonParser
 import org.json.JSONObject
-import org.sfbike.data.SfpdStation
+import org.sfbike.R
+import org.sfbike.data.District
+import org.sfbike.data.Station
+import org.sfbike.util.Geo
 import org.sfbike.util.GooglePlayUtil
+import org.sfbike.util.bindView
+import org.sfbike.util.log
+import org.sfbike.view.DashboardView
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -44,7 +50,8 @@ class MainActivity : FragmentActivity() {
 
     private val handler = Handler()
 
-    lateinit var mapView: MapView
+    val mapView: MapView by bindView(R.id.map_view)
+    val dashboardView: DashboardView by bindView(R.id.dashboard_view)
     private var map: GoogleMap? = null
 
     //endregion
@@ -53,9 +60,8 @@ class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-        setContentView(R.layout.activity_maps)
-        mapView = findViewById(R.id.map_view) as MapView
         mapView.onCreate(savedInstanceState)
 
         //val options = GoogleMapOptions().zOrderOnTop(true)
@@ -64,7 +70,7 @@ class MainActivity : FragmentActivity() {
 
         mapView.getMapAsync { googleMap ->
             map = googleMap
-            googleMap.setOnMapClickListener { loc -> showStationInfo(loc) }
+            googleMap.setOnMapClickListener { loc -> bindLocation(loc) }
 
             configureMap()
 
@@ -154,42 +160,72 @@ class MainActivity : FragmentActivity() {
                         .build()))
     }
 
-    private fun showStationInfo(location: LatLng) {
+    private fun bindLocation(location: LatLng) {
+        val station = getStation(location)
+        val district = getDistrict(location)
+
+        dashboardView.visibility = View.VISIBLE
+        dashboardView.bindStation(station.first)
+        dashboardView.bindDistrict(district.first)
+    }
+
+    private fun getStation(location: LatLng): Pair<Station?, GeoJsonFeature?> {
         for (feature in sfpdFeatureParser.features) {
             if (feature.geometry is GeoJsonMultiPolygon) {
                 for (poly in (feature.geometry as GeoJsonMultiPolygon).polygons) {
                     if (Geo.coordinateIsInsidePolygon(location.latitude, location.longitude, poly.coordinates[0])) {
-                        stationToast(feature)
+                        return Pair(stationForFeature(feature), feature)
                     }
                 }
             }
         }
+        return Pair(null, null)
     }
 
-    private fun stationToast(feature: GeoJsonFeature) {
+    private fun stationForFeature(feature: GeoJsonFeature): Station? {
         val id = feature.getProperty("objectid").toInt()
-        val station = sfpdStations.first { it.id == id }
-        Toast.makeText(this@MainActivity, "${station.name}", Toast.LENGTH_LONG).show()
+        return sfpdInfo.firstOrNull { it.id == id }
+    }
+
+    private fun getDistrict(location: LatLng): Pair<District?, GeoJsonFeature?> {
+        for (feature in supeParser.features) {
+            if (feature.geometry is GeoJsonMultiPolygon) {
+                for (poly in (feature.geometry as GeoJsonMultiPolygon).polygons) {
+                    if (Geo.coordinateIsInsidePolygon(location.latitude, location.longitude, poly.coordinates[0])) {
+                        return Pair(districtForFeature(feature), feature)
+                    }
+                }
+            }
+        }
+        return Pair(null, null)
+    }
+
+    private fun districtForFeature(feature: GeoJsonFeature): District? {
+        val id = feature.getProperty("supervisor").toInt()
+        return supeInfo.firstOrNull { it.id == id }
     }
 
     //endregion
 
-    //region JSON / GeoJSON parsing
+    //region SFPD JSON / GeoJSON parsing
+
+    val gson: Gson by lazy {
+        Gson()
+    }
 
     val sfpdShapeJson: JSONObject by lazy {
         val stream = resources.openRawResource(R.raw.sfpd_shapes)
         GeoJsonLayer.createJsonFileObject(stream)
     }
 
-    val sfpdStations: MutableList<SfpdStation> by lazy {
-        val gson = Gson()
-        val raw = resources.openRawResource(R.raw.sfpd_stations)
-        val reader = BufferedReader(InputStreamReader(raw))
-        gson.fromJson<List<SfpdStation>>(reader).toMutableList()
-    }
-
     val sfpdFeatureParser: GeoJsonParser by lazy {
         GeoJsonParser(sfpdShapeJson)
+    }
+
+    val sfpdInfo: MutableList<Station> by lazy {
+        val raw = resources.openRawResource(R.raw.sfpd_stations)
+        val reader = BufferedReader(InputStreamReader(raw))
+        gson.fromJson<List<Station>>(reader).toMutableList()
     }
 
     private fun displaySfpdShapes() {
@@ -198,7 +234,26 @@ class MainActivity : FragmentActivity() {
         sfpdLayer.addLayerToMap()
 
         // Feature click listener
-        sfpdLayer.setOnFeatureClickListener { feature ->  if (feature != null) { stationToast(feature) } }
+        // sfpdLayer.setOnFeatureClickListener { feature ->  if (feature != null) { stationToast(feature) } }
+    }
+
+    //endregion
+
+    //region Supervisor District JSON GeoJSON parsing
+
+    val supeJson: JSONObject by lazy {
+        val stream = resources.openRawResource(R.raw.supervisor_shapes)
+        GeoJsonLayer.createJsonFileObject(stream)
+    }
+
+    val supeParser: GeoJsonParser by lazy {
+        GeoJsonParser(supeJson)
+    }
+
+    val supeInfo: MutableList<District> by lazy {
+        val raw = resources.openRawResource(R.raw.supervisor_districts)
+        val reader = BufferedReader(InputStreamReader(raw))
+        gson.fromJson<List<District>>(reader).toMutableList()
     }
 
     //endregion
@@ -211,7 +266,7 @@ class MainActivity : FragmentActivity() {
 
         val latlng = LatLng(location.latitude, location.longitude)
         zoom(latlng)
-        showStationInfo(latlng)
+        bindLocation(latlng)
     }
 
     private var location: Location? = null
@@ -227,26 +282,26 @@ class MainActivity : FragmentActivity() {
     }
     val locationClient: GoogleApiClient by lazy {
         GoogleApiClient.Builder(this, object : GoogleApiClient.ConnectionCallbacks {
-                    override fun onConnected(p0: Bundle?) {
-                        if (!locationClient.isConnected) {
-                            return
-                        }
-                        val location = LocationServices.FusedLocationApi.getLastLocation(locationClient)
-                        if (location == null || (location.latitude == 0.0 && location.longitude == 0.0)) {
-                            log.e("LocationClient - Received bogus location, not using", RuntimeException("bad loc"))
-                            return
-                        }
+            override fun onConnected(p0: Bundle?) {
+                if (!locationClient.isConnected) {
+                    return
+                }
+                val location = LocationServices.FusedLocationApi.getLastLocation(locationClient)
+                if (location == null || (location.latitude == 0.0 && location.longitude == 0.0)) {
+                    log.e("LocationClient - Received bogus location, not using", RuntimeException("bad loc"))
+                    return
+                }
 
-                        onLocation(location)
+                onLocation(location)
 
-                        log("LocationClient - delivered loc=" + location.latitude + ", " + location.longitude)
-                        locationClient.disconnect()
-                    }
+                log("LocationClient - delivered loc=" + location.latitude + ", " + location.longitude)
+                locationClient.disconnect()
+            }
 
-                    override fun onConnectionSuspended(p0: Int) = log.w("LocationClient - onConnectionSuspended code=${p0}")
-                }, object : GoogleApiClient.OnConnectionFailedListener {
-                    override fun onConnectionFailed(result: ConnectionResult) = log.w("LocationClient - onConnectionFailed($result)")
-                })
+            override fun onConnectionSuspended(p0: Int) = log.w("LocationClient - onConnectionSuspended code=${p0}")
+        }, object : GoogleApiClient.OnConnectionFailedListener {
+            override fun onConnectionFailed(result: ConnectionResult) = log.w("LocationClient - onConnectionFailed($result)")
+        })
                 .addApi(LocationServices.API)
                 .build()
     }

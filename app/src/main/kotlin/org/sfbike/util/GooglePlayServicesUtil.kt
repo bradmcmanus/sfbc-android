@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.DialogInterface
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GooglePlayServicesUtil
-import org.sfbike.log
+import org.sfbike.util.log
 
 object GooglePlayUtil {
 

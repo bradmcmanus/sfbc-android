@@ -1,4 +1,4 @@
-package org.sfbike
+package org.sfbike.util
 
 import com.google.android.gms.maps.model.LatLng
 import org.json.JSONException

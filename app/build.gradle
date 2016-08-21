@@ -14,6 +14,7 @@ android {
 
         multiDexEnabled true
     }
+
     buildTypes {
         debug {
             applicationIdSuffix '.debug'
@@ -23,11 +24,13 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
     signingConfigs {
         debug {
             storeFile file("debug.keystore")
         }
     }
+
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
@@ -38,7 +41,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
 
     compile "org.jetbrains.kotlin:kotlin-stdlib:${kotlin_version}"
-    compile 'com.android.support:appcompat-v7:24.1.1'
+    compile 'com.android.support:appcompat-v7:24.2.0'
 
     def gpsVersion = '9.4.0'
     compile "com.google.android.gms:play-services-location:${gpsVersion}"
@@ -46,4 +49,5 @@ dependencies {
 
     compile 'com.google.code.gson:gson:2.6.2'
     compile 'com.github.salomonbrys.kotson:kotson:2.3.0'
+
 }

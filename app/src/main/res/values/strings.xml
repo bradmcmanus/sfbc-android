@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">SF Bike</string>
-    <string name="title_activity_maps">Map</string>
+    <string name="tweet">Tweet</string>
+    <string name="email">Email</string>
 </resources>

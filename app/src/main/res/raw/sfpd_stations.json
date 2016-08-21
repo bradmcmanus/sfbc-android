@@ -1,62 +1,82 @@
-[{
-    "id":"1",
+[
+  {
+    "id": "1",
     "name": "Central",
     "phone_number": "415-315-2400",
     "street_name": "766 Vallejo Street",
-    "email": "SFPDCentralStation@sfgov.org"
-  }, {
-    "id":"2",
+    "email": "SFPDCentralStation@sfgov.org",
+    "twitter": "SFPDCentral"
+  },
+  {
+    "id": "2",
     "name": "Southern",
     "phone_number": "415-575-6000",
     "street_name": "1251 3rd Street",
-    "email": "SFPDSouthernStation@sfgov.org"
-  }, {
-    "id":"3",
+    "email": "SFPDSouthernStation@sfgov.org",
+    "twitter": "SFPDSouthern"
+  },
+  {
+    "id": "3",
     "name": "Bayview",
     "phone_number": "415-671-2300",
     "street_name": "201 Williams Avenue",
-    "email": "SFPDBayviewStation@sfgov.org"
-  }, {
-    "id":"4",
+    "email": "SFPDBayviewStation@sfgov.org",
+    "twitter": "SFPDBayview"
+  },
+  {
+    "id": "4",
     "name": "Mission",
     "phone_number": "415-558-5400",
     "street_name": "630 Valencia Street",
-    "email": "SFPDMissionStation@sfgov.org"
-  }, {
-    "id":"9",
+    "email": "SFPDMissionStation@sfgov.org",
+    "twitter": "SFPDMission"
+  },
+  {
+    "id": "9",
     "name": "Northern",
     "phone_number": "415-614-3400",
     "street_name": "1125 Fillmore Street",
-    "email": "SFPDNorthernStation@sfgov.org"
-  }, {
-    "id":"5",
+    "email": "SFPDNorthernStation@sfgov.org",
+    "twitter": "SFPDNorther"
+  },
+  {
+    "id": "5",
     "name": "Park",
     "phone_number": "415-242-3000",
     "street_name": "1899 Waller Street",
-    "email": "SFPDParkStation@sfgov.org"
-  }, {
-    "id":"6",
+    "email": "SFPDParkStation@sfgov.org",
+    "twitter": "SFPDPark"
+  },
+  {
+    "id": "6",
     "name": "Richmond",
     "phone_number": "415-666-8000",
     "street_name": "461 6th Avenue",
-    "email": "SFPDRichmondStation@sfgov.org"
-  }, {
-    "id":"7",
+    "email": "SFPDRichmondStation@sfgov.org",
+    "twitter": "SFPDRichmond"
+  },
+  {
+    "id": "7",
     "name": "Ingleside",
     "phone_number": "415-404-4000",
     "street_name": "1 Sgt. John V. Young Lane",
-    "email": "SFPDInglesideStation@sfgov.org"
-  }, {
-    "id":"8",
+    "email": "SFPDInglesideStation@sfgov.org",
+    "twitter": "SFPDIngleside"
+  },
+  {
+    "id": "8",
     "name": "Taraval",
     "phone_number": "415-759-3100",
     "street_name": "2345 24th Avenue",
-    "email": "SFPDTaravalStation@sfgov.org"
-  }, {
-    "id":"10",
+    "email": "SFPDTaravalStation@sfgov.org",
+    "twitter": "SFPDTaraval"
+  },
+  {
+    "id": "10",
     "name": "Tenderloin",
     "phone_number": "415-345-7300",
     "street_name": "301 Eddy Street",
-    "email": "SFPDTenderloinStation@sfgov.org"
+    "email": "SFPDTenderloinStation@sfgov.org",
+    "twitter": "SFPDTenderloin"
   }
 ]

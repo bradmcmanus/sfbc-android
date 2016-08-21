@@ -8,4 +8,12 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
+    <org.sfbike.view.DashboardView
+        android:id="@+id/dashboard_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@android:color/holo_orange_light"
+        android:visibility="gone"/>
+
 </FrameLayout>

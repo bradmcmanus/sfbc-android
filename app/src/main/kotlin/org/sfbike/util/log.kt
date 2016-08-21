@@ -1,4 +1,4 @@
-package org.sfbike
+package org.sfbike.util
 
 import android.util.Log
 
