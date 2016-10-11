@@ -51,7 +51,6 @@ class MainActivity : FragmentActivity() {
 
     private val handler = Handler()
 
-    val mapView: MapView by bindView(R.id.map_view)
     val dashboardView: DashboardView by bindView(R.id.dashboard_view)
     private var map: GoogleMap? = null
 
@@ -59,36 +58,26 @@ class MainActivity : FragmentActivity() {
 
     //region Overrides
 
+    val mapView: MapView by bindView(R.id.map_view)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         mapView.onCreate(savedInstanceState)
 
-        //val options = GoogleMapOptions().zOrderOnTop(true)
-        //mapView = MapView(this, options)
-        //setContentView(mapView)
-
         mapView.getMapAsync { googleMap ->
             map = googleMap
+
             googleMap.setOnMapClickListener { loc ->
-                map?.clear()
-                map?.addMarker(MarkerOptions().position(loc))
+                googleMap.clear()
+                googleMap.addMarker(MarkerOptions().position(loc))
                 bindLocation(loc)
                 zoom(loc, false, TAP_ZOOM)
             }
 
             configureMap()
-
-            //displaySfpdShapes()
-
-            if (location != null) onLocation(location!!)
         }
-
-        handler.postDelayed({ map?.setLocationSource(locationSource) }, 10000)
-
-
-        loadIntentImageExtra()
     }
 
     var imageUri: Uri? = null
@@ -203,9 +192,11 @@ class MainActivity : FragmentActivity() {
         val style = GeoJsonPolygonStyle()
         style.fillColor = adjustAlpha(getColor(R.color.material_blue_grey_800), .7f)
         station.second?.polygonStyle = style
+
         val lineStyle = GeoJsonLineStringStyle()
         lineStyle.color = getColor(android.R.color.white)
         station.second?.lineStringStyle = lineStyle
+
         val stationLayer = GeoJsonLayer(map, station.second)
         stationLayer.addLayerToMap()
 
