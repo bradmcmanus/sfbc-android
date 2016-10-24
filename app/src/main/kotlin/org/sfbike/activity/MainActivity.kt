@@ -8,7 +8,6 @@ import android.graphics.Color
 import android.location.Location
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
 import android.os.PersistableBundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.FragmentActivity
@@ -16,7 +15,6 @@ import android.support.v4.content.ContextCompat
 import android.view.KeyEvent
 import android.view.View
 import com.github.salomonbrys.kotson.fromJson
-import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -32,10 +30,7 @@ import org.json.JSONObject
 import org.sfbike.R
 import org.sfbike.data.District
 import org.sfbike.data.Station
-import org.sfbike.util.GeoUtil
-import org.sfbike.util.GooglePlayUtil
-import org.sfbike.util.bindView
-import org.sfbike.util.log
+import org.sfbike.util.*
 import org.sfbike.view.DashboardView
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -47,18 +42,19 @@ class MainActivity : FragmentActivity() {
     companion object {
         private val DEFAULT_ZOOM = 13.88.toFloat()
         private val TAP_ZOOM = 14.7.toFloat()
+
+        private val REQUEST_CODE_READ_EXTERNAL_STORAGE = 2345
     }
 
-    private val handler = Handler()
-
+    val mapView: MapView by bindView(R.id.map_view)
     val dashboardView: DashboardView by bindView(R.id.dashboard_view)
+
     private var map: GoogleMap? = null
+    private var imageUri: Uri? = null
 
     //endregion
 
     //region Overrides
-
-    val mapView: MapView by bindView(R.id.map_view)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,28 +73,7 @@ class MainActivity : FragmentActivity() {
             }
 
             configureMap()
-        }
-    }
-
-    var imageUri: Uri? = null
-
-    private fun loadIntentImageExtra() {
-        fun handleSendImage(intent: Intent) {
-            try {
-                imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM)
-            } catch (e: Exception) {
-                log("unable to load image")
-            }
-        }
-
-        val intent = intent
-        val action = intent.action
-        val type = intent.type
-
-        if (Intent.ACTION_SEND.equals(action) && type != null) {
-            if (type.startsWith("image/")) {
-                handleSendImage(intent)
-            }
+            loadIntentImageExtra(intent)
         }
     }
 
@@ -138,9 +113,35 @@ class MainActivity : FragmentActivity() {
         mapView.onLowMemory()
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        if (intent != null) {
+            // TODO show loading?
+            loadIntentImageExtra(intent)
+        }
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         configureMap()
+
+        when (requestCode) {
+            REQUEST_CODE_READ_EXTERNAL_STORAGE -> {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+
+                    readImageLocationData()
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return
+            }
+        }
     }
 
     //endregion
@@ -152,7 +153,6 @@ class MainActivity : FragmentActivity() {
                 PackageManager.PERMISSION_GRANTED &&
                 ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
                         PackageManager.PERMISSION_GRANTED
-
 
     private fun configureMap() {
         if (locationGranted) {
@@ -304,15 +304,53 @@ class MainActivity : FragmentActivity() {
 
     //endregion
 
+    //region Image
+
+    var hasPendingImage: Boolean = false
+
+    private fun loadIntentImageExtra(intent: Intent) {
+        imageUri = ImageUtil.uriFromIntent(intent)
+
+        if (imageUri != null) {
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                hasPendingImage = true
+
+                // Should we show an explanation?
+                if (shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                    // Explain to the user why we need to read the contacts
+                }
+
+                requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), REQUEST_CODE_READ_EXTERNAL_STORAGE)
+            } else {
+                readImageLocationData()
+            }
+        }
+    }
+
+    private fun readImageLocationData() {
+        val imageLatLng: LatLng? = ImageUtil.latLngFromUri(this, imageUri)
+
+        if (imageLatLng != null) {
+            zoom(imageLatLng, addMarker = true)
+            bindLocation(imageLatLng)
+        }
+        if (imageUri != null) dashboardView.bindImage(imageUri)
+    }
+
+    //endregion
+
     //region Current Location
 
     private fun onLocation(location: Location) {
         this@MainActivity.location = location
         locationListener?.onLocationChanged(location)
 
-        val latlng = LatLng(location.latitude, location.longitude)
-        zoom(latlng)
-        bindLocation(latlng)
+        if (imageUri == null) {
+            val latLng = LatLng(location.latitude, location.longitude)
+
+            zoom(latLng)
+            bindLocation(latLng)
+        }
     }
 
     private var location: Location? = null
@@ -345,9 +383,7 @@ class MainActivity : FragmentActivity() {
             }
 
             override fun onConnectionSuspended(p0: Int) = log.w("LocationClient - onConnectionSuspended code=${p0}")
-        }, object : GoogleApiClient.OnConnectionFailedListener {
-            override fun onConnectionFailed(result: ConnectionResult) = log.w("LocationClient - onConnectionFailed($result)")
-        })
+        }, { result -> log.w("LocationClient - onConnectionFailed($result)") })
                 .addApi(LocationServices.API)
                 .build()
     }

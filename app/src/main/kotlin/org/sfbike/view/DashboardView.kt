@@ -7,16 +7,15 @@ import android.net.Uri
 import android.telephony.PhoneNumberUtils
 import android.util.AttributeSet
 import android.view.View
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import org.sfbike.R
 import org.sfbike.data.District
 import org.sfbike.data.Station
 import org.sfbike.util.bindView
 
 class DashboardView(context: Context, attrs: AttributeSet) : LinearLayout(context, attrs) {
+
+    val thumbIv: ImageView by bindView(R.id.thumb_iv)
 
     val districtTv: TextView by bindView(R.id.district_tv)
     val stationTv: TextView by bindView(R.id.station_tv)
@@ -48,6 +47,22 @@ class DashboardView(context: Context, attrs: AttributeSet) : LinearLayout(contex
         emailStationBtn.setOnClickListener { launchEmail(station!!) }
         emailSupeBtn.setOnClickListener { launchEmail(district!!) }
     }
+
+    fun bindDistrict(district: District?) {
+        this.district = district
+        districtTv.text = "District ${district?.id}\n${district?.name}"
+    }
+
+    fun bindStation(station: Station?) {
+        this.station = station
+        stationTv.text = "${station?.name}\nStation"
+    }
+
+    fun bindImage(uri: Uri?) {
+        thumbIv.setImageURI(uri)
+    }
+
+    //region Helpers
 
     private fun launchEmail(station: Station) {
         val email = station.email
@@ -116,14 +131,6 @@ class DashboardView(context: Context, attrs: AttributeSet) : LinearLayout(contex
         }
     }
 
-    fun bindDistrict(district: District?) {
-        this.district = district
-        districtTv.text = "District ${district?.id}\n${district?.name}"
-    }
-
-    fun bindStation(station: Station?) {
-        this.station = station
-        stationTv.text = "${station?.name}\nStation"
-    }
+    //endregion
 
 }
